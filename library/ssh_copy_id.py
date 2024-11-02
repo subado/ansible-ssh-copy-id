@@ -35,7 +35,15 @@ options:
     password:
         description:
             - Password to login to remote system
-        required: true
+        required: false
+    key_filename:
+        description:
+            - Password to login to remote system
+        required: false
+    passphrase:
+        description:
+        - Password to login to remote system
+        required: false
     ssh_public_key:
         description:
             - SSH public key (include absolute path)
@@ -82,22 +90,28 @@ def run_module():
     module_args = dict(
         hostname=dict(type="str", required=True),
         username=dict(type="str", required=True),
-        password=dict(type="str", required=True, no_log=True),
+        password=dict(type="str", required=False, no_log=True),
+        key_filename=dict(type="str", required=False, no_log=True),
+        passphrase=dict(type="str", required=False, no_log=True),
         ssh_public_key=dict(type="str", required=True),
         hetzner_storagebox=dict(type="str", required=False),
-        ssh_port=dict(type="str", required=False),
+        ssh_port=dict(type="str", required=False, default='22'),
     )
 
     # results dictionary
     result = dict(changed=False, original_message="", message="")
 
     # create ansible module object
-    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
+    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True, required_one_of=[
+        ('password', 'key_filename'),
+    ],)
 
     # set local variables
     hostname = module.params["hostname"]
     username = module.params["username"]
     password = module.params["password"]
+    key_filename = module.params["key_filename"]
+    passphrase = module.params["passphrase"]
     public_key = module.params["ssh_public_key"]
     hetzner_storagebox = module.params["hetzner_storagebox"]
     port = module.params["ssh_port"]
@@ -135,6 +149,8 @@ def run_module():
             hostname=hostname,
             username=username,
             password=password,
+            key_filename=key_filename,
+            passphrase=passphrase,
             look_for_keys=False,
             allow_agent=False,
             port=port,
